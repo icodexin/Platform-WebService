@@ -1,0 +1,52 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: platform
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Shanghai  # 设置时区
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./config/mysql/conf.d:/etc/mysql/conf.d
+    ports:
+      - "3306:3306"  # 映射 MySQL 端口
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"    # AMQP 端口
+      - "15672:15672"  # 管理界面端口
+      - "1883:1883"    # MQTT 端口
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    #      - /root/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      RABBITMQ_CONFIG_FILE: /etc/rabbitmq/rabbitmq.conf
+    command:
+      - /bin/bash
+      - -c
+      - |
+        rabbitmq-plugins enable rabbitmq_event_exchange
+        rabbitmq-plugins enable rabbitmq_mqtt --offline
+        docker-entrypoint.sh rabbitmq-server
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes: # 持久化数据卷
+  rabbitmq-data:
+    driver: local
+  mysql-data:
+    driver: local

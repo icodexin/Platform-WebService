@@ -1,0 +1,1 @@
+from app.modules.rabbitmq.routes import router as rabbitmq_router

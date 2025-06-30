@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>学生用户注册</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f9fafb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .container h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 1rem 1rem;
+            align-items: center;
+        }
+
+        label {
+            text-align: right;
+            padding-right: 0.5rem;
+        }
+
+        input, select {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            grid-column: span 2;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+
+        button:disabled {
+            background-color: #a5b4fc;
+            color: #f3f4f6;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .button-loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #fff;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            grid-column: span 2;
+            color: red;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>多模态数据采集与学习者状态实时感知平台</h2>
+    <h2>学生用户注册</h2>
+    <form id="registerForm">
+        <label for="user_id">学号</label>
+        <input type="text" name="user_id" id="user_id" required pattern="^\d{4,20}$"/>
+
+        <label for="password">密码</label>
+        <input type="password" name="password" id="password" required minlength="6"/>
+
+        <label for="name">姓名</label>
+        <input type="text" name="name" id="name" required/>
+
+        <label for="gender">性别</label>
+        <select name="gender" id="gender">
+            <option value="M">男</option>
+            <option value="F">女</option>
+            <option value="U">未知</option>
+        </select>
+
+        <label for="birthdate">出生日期</label>
+        <input type="date" name="birthdate" id="birthdate"/>
+
+        <label for="college">学院</label>
+        <input type="text" name="college" id="college"/>
+
+        <label for="stu_type">学生类型</label>
+        <select name="stu_type" id="stu_type">
+            <option value="">-- 选择 --</option>
+            <option value="UNDERGRADUATE">本科生</option>
+            <option value="POSTGRADUATE">硕士研究生</option>
+            <option value="DOCTORAL">博士研究生</option>
+        </select>
+
+        <label for="grade">年级</label>
+        <input type="number" name="grade" id="grade" min="1" max="8"/>
+
+        <label for="major">专业</label>
+        <input type="text" name="major" id="major"/>
+
+        <button type="submit" id="registerBtn">
+            注册
+            <span id="loadingRing" class="button-loading" style="display:none;"></span>
+        </button>
+
+        <p class="error" id="errorMsg"></p>
+    </form>
+</div>
+
+<script>
+    document.getElementById("registerForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const data = {};
+        const btn = document.getElementById("registerBtn");
+        const ring = document.getElementById("loadingRing");
+        const errorMsg = document.getElementById("errorMsg");
+
+        formData.forEach((value, key) => {
+            if (value !== "") data[key] = value;
+        });
+
+        // 禁用按钮并显示 loading
+        btn.disabled = true;
+        ring.style.display = "inline-block";
+        errorMsg.innerText = "";
+
+        try {
+            const response = await fetch("/api/users/student", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "注册失败。");
+            }
+
+            alert("注册成功！");
+            form.reset();
+        } catch (error) {
+            document.getElementById("errorMsg").innerText = error.message;
+        } finally {
+            // 恢复按钮和 loading
+            btn.disabled = false;
+            ring.style.display = "none";
+        }
+    });
+</script>
+</body>
+</html>

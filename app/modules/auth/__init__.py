@@ -1,0 +1,1 @@
+from app.modules.auth.routes import router as auth_router
