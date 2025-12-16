@@ -1,4 +1,4 @@
-from urllib.parse import quote_plus
+from urllib.parse import quote
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,10 +15,15 @@ class Settings(BaseSettings):
     MYSQL_USER: str = "admin"
     MYSQL_PASSWORD: str = "password"
 
+    RABBITMQ_HOST: str = "localhost"
+    RABBITMQ_PORT: int = 5672
+    RABBITMQ_USER: str = "guest"
+    RABBITMQ_PASSWORD: str = "guest"
+
     @property
     def DATABASE_URL(self) -> str:
-        username = quote_plus(self.MYSQL_USER)
-        password = quote_plus(self.MYSQL_PASSWORD)
+        username = quote(self.MYSQL_USER, safe='')
+        password = quote(self.MYSQL_PASSWORD, safe='')
         return (
             f"mysql+asyncmy://{username}:{password}"
             f"@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}?charset=utf8mb4"
