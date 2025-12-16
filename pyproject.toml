@@ -1,0 +1,21 @@
+[project]
+name = "webservice"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "aio-pika>=9.5.7",
+    "apscheduler>=3.11.1",
+    "asyncmy>=0.2.10",
+    "fastapi[standard]>=0.121.0",
+    "msgpack>=1.1.2",
+    "pwdlib[argon2]>=0.3.0",
+    "pydantic-settings>=2.11.0",
+    "python-jose>=3.5.0",
+    "sqlalchemy>=2.0.44",
+]
+
+[[tool.uv.index]]
+url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
+default = true
