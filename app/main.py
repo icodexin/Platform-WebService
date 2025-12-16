@@ -1,6 +1,8 @@
-from dotenv import load_dotenv
+import asyncio
 
+from dotenv import load_dotenv
 load_dotenv("../.env")
+
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from contextlib import asynccontextmanager
@@ -11,6 +13,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.common.dao import TokenBlocklistDAO
 from app.modules.auth import auth_router
+from app.modules.datastream import datastream_router, data_consumer_task, WebsocketManager
 from app.modules.users import users_router
 from app.modules.rabbitmq import rabbitmq_router
 
@@ -27,7 +30,7 @@ async def remove_expired_tokens_job():
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     """
-    应用程序的生命周期管理器，用于在应用启动时初始化调度器。
+    应用程序的生命周期管理器，可用于管理后台任务
     """
     # 创建任务调度器
     scheduler = AsyncIOScheduler()
@@ -39,10 +42,20 @@ async def lifespan(_app: FastAPI):
     )
     # 启动调度器
     scheduler.start()
+    # 实例化应用级资源
+    app.state.datastream_ws_mgr = WebsocketManager()
+    # 创建后台任务
+    app.state.tasks = [
+        asyncio.create_task(data_consumer_task(app.state.datastream_ws_mgr))
+    ]
     # 运行时
     yield
     # 在应用关闭时清理调度器
     scheduler.shutdown()
+    # 关闭时取消后台任务
+    for task in app.state.tasks:
+        task.cancel()
+    await asyncio.gather(*app.state.tasks, return_exceptions=True)
 
 
 app = FastAPI(
@@ -57,6 +70,7 @@ app = FastAPI(
 app.include_router(auth_router, tags=["Authentication"])
 app.include_router(users_router, prefix="/api", tags=["Users"])
 app.include_router(rabbitmq_router, prefix="/api/rabbitmq", tags=["RabbitMQ"])
+app.include_router(datastream_router, prefix="/datastream", tags=["DataStream"])
 
 
 @app.get("/", response_class=HTMLResponse)
