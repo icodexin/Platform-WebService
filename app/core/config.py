@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     RABBITMQ_USER: str = "guest"
     RABBITMQ_PASSWORD: str = "guest"
 
+    SYS_ADMIN_USER: str = "admin"
+    SYS_ADMIN_INIT_PWD: str = "admin123"
+
     @property
     def DATABASE_URL(self) -> str:
         username = quote(self.POSTGRES_USER, safe='')
