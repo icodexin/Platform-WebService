@@ -2,10 +2,14 @@ from fastapi import Depends, HTTPException, status
 from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dao.user import UserDAO
-from app.schemas.user import StudentCreate, TeacherCreate, UserCreate
+from app.core.db import get_db
+from app.dao import UserDAO
+from app.core.security import oauth2_scheme
+from app.schemas.user import AdminResponse, StudentCreate, StudentResponse, StudentProfile, TeacherCreate, TeacherResponse, TeacherProfile, UserCreate, UserOut, UserResponse
+from app.services.auth import verify_token
 
-async def create_user(user: UserCreate, db: AsyncSession):
+
+async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     user = TypeAdapter(UserCreate).validate_python(user)
     dao = UserDAO(db)
 
@@ -29,3 +33,52 @@ async def create_user(user: UserCreate, db: AsyncSession):
         )
 
     return new_user
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> UserResponse:
+    payload = await verify_token(token, "access", db=db)
+    uid = int(payload.get("sub")) if payload else None
+    if not uid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user = await UserDAO(db).get_user_by_id(uid)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # 获取基础用户数据
+    user_data = UserOut.model_validate(user)
+    
+    # 根据用户类型加载对应的 profile
+    if user.user_type == "student" and user.student_profile:
+        profile = user.student_profile
+        profile_data = StudentProfile.model_validate(profile)
+        return StudentResponse(**user_data.model_dump(), **profile_data.model_dump())
+    elif user.user_type == "teacher" and user.teacher_profile:
+        profile = user.teacher_profile
+        profile_data = TeacherProfile.model_validate(profile)
+        return TeacherResponse(**user_data.model_dump(), **profile_data.model_dump())
+    elif user.user_type == "admin":
+        return AdminResponse(**user_data.model_dump())
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="User profile not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+
+async def get_current_activate_user(current_user: UserOut = Depends(get_current_user)):
+    if not current_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return current_user

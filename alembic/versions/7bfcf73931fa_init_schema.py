@@ -1,8 +1,8 @@
 """init schema
 
-Revision ID: df8ee19aa3da
+Revision ID: 7bfcf73931fa
 Revises: 
-Create Date: 2026-01-09 01:21:03.233697
+Create Date: 2026-01-12 01:13:55.849010
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'df8ee19aa3da'
+revision: str = '7bfcf73931fa'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -82,6 +82,17 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('user_id')
     )
+    op.create_table('token_blocklist',
+    sa.Column('jti', sa.UUID(), nullable=False, comment='JWT ID'),
+    sa.Column('user_id', sa.Integer(), nullable=False, comment='用户ID'),
+    sa.Column('token_type', sa.Enum('access', 'refresh', name='tokentypeenum'), nullable=False, comment='令牌类型'),
+    sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False, comment='令牌过期时间'),
+    sa.Column('revoked_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, comment='令牌被撤销的时间'),
+    sa.Column('revoked_reason', sa.String(length=128), nullable=True, comment='令牌被撤销的原因'),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('jti')
+    )
+    op.create_index(op.f('ix_token_blocklist_user_id'), 'token_blocklist', ['user_id'], unique=False)
     op.create_table('user_role',
     sa.Column('user_id', sa.Integer(), nullable=False, comment='用户ID'),
     sa.Column('role_id', sa.Integer(), nullable=False, comment='角色ID'),
@@ -98,6 +109,8 @@ def downgrade() -> None:
     """Downgrade schema."""
     # 删除表和索引
     op.drop_table('user_role')
+    op.drop_index(op.f('ix_token_blocklist_user_id'), table_name='token_blocklist')
+    op.drop_table('token_blocklist')
     op.drop_table('teacher_profile')
     op.drop_table('student_profile')
     op.drop_table('role_permission')
@@ -111,3 +124,4 @@ def downgrade() -> None:
     op.execute('DROP TYPE IF EXISTS usertypeenum')
     op.execute('DROP TYPE IF EXISTS genderenum')
     op.execute('DROP TYPE IF EXISTS studenttypeenum')
+    op.execute('DROP TYPE IF EXISTS tokentypeenum')

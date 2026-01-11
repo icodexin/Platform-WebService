@@ -1,8 +1,8 @@
 """init rbac data
 
-Revision ID: e2e6e80df912
-Revises: df8ee19aa3da
-Create Date: 2026-01-09 01:43:08.161728
+Revision ID: 2abf087db856
+Revises: 7bfcf73931fa
+Create Date: 2026-01-12 01:16:56.545736
 
 """
 from typing import Sequence, Union
@@ -10,12 +10,13 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
-from app.core.config import settings
+from app.core import settings
 from app.core.security import get_password_hash
 
+
 # revision identifiers, used by Alembic.
-revision: str = 'e2e6e80df912'
-down_revision: Union[str, Sequence[str], None] = 'df8ee19aa3da'
+revision: str = '2abf087db856'
+down_revision: Union[str, Sequence[str], None] = '7bfcf73931fa'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

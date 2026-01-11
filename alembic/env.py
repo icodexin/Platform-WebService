@@ -21,11 +21,10 @@ from app.core.db import Base
 from app.core.config import settings
 
 # 导入所有模型以确保 alembic 能够检测到它们
-from app.models.user import User, StudentProfile, TeacherProfile
-from app.models.role import Role
-from app.models.permission import Permission
-from app.models.user_role import UserRole
-from app.models.role_permission import RolePermission
+from app.models import (
+    User, StudentProfile, TeacherProfile, Role, Permission, UserRole, RolePermission,
+    TokenBlocklist
+)
 
 target_metadata = Base.metadata
 

@@ -12,7 +12,7 @@ pwd_context = PasswordHash((
     Argon2Hasher(),
 ))
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token", scheme_name="JWT", refreshUrl="/auth/refresh")
 
 
 def verify_password(plain_password: str, hashed_password: str):
@@ -25,9 +25,9 @@ def get_password_hash(password: str):
 
 def create_token(data: dict, token_type: str, expires_delta: timedelta, expire_at : datetime = None):
     """
-    创建 JWT 令牌。
+    创建 JWT 令牌
     :param data: 包含用户信息的字典
-    :param token_type: 令牌类型（``access`` 或 ``refresh``）
+    :param token_type: 令牌类型（``access`` 或 ``refresh``)
     :param expires_delta: 时间增量，表示令牌的有效期
     :param expire_at: 可选的过期时间，如果提供则覆盖 ``expires_delta``
     :return: JWT 令牌字符串

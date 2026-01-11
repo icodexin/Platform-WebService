@@ -1,3 +1,4 @@
+import datetime
 from datetime import date
 from typing import Annotated, Literal, Optional, Union
 
@@ -13,6 +14,10 @@ class UserBase(BaseModel):
     name: str
     gender: Optional[GenderEnum] = None
     birthdate: Optional[date] = None
+
+    model_config = {
+        "from_attributes": True,
+    }
 
 
 class UserIn(UserBase):
@@ -35,6 +40,10 @@ class StudentProfile(BaseModel):
     major: Optional[str] = None
     enrollment_year: Optional[int] = None
 
+    model_config = {
+        "from_attributes": True,
+    }
+
 
 class StudentCreate(UserIn, StudentProfile):
     user_type: Literal[UserTypeEnum.student] = UserTypeEnum.student
@@ -49,6 +58,10 @@ class StudentCreate(UserIn, StudentProfile):
 class TeacherProfile(BaseModel):
     department: Optional[str] = None
     title: Optional[str] = None
+
+    model_config = {
+        "from_attributes": True,
+    }
 
 
 class TeacherCreate(UserIn, TeacherProfile):
@@ -65,3 +78,43 @@ UserCreate = Annotated[
     Union[StudentCreate, TeacherCreate],
     Field(discriminator='user_type')
 ]
+
+
+class UserOut(UserBase):
+    is_active: bool
+
+
+class StudentResponse(UserOut, StudentProfile):
+    user_type: Literal[UserTypeEnum.student] = UserTypeEnum.student
+
+
+class TeacherResponse(UserOut, TeacherProfile):
+    user_type: Literal[UserTypeEnum.teacher] = UserTypeEnum.teacher
+
+
+class AdminResponse(UserOut):
+    user_type: Literal[UserTypeEnum.admin] = UserTypeEnum.admin
+
+
+UserResponse = Annotated[
+    Union[StudentResponse, TeacherResponse, AdminResponse],
+    Field(discriminator='user_type')
+]
+
+
+if __name__ == '__main__':
+    from pydantic import TypeAdapter
+    user = {
+        "user_type":'student',
+        "is_active":True,
+        "unified_id":'123456',
+        "name":"test",
+        "student_type":StudentTypeEnum.undergraduate,
+        "college": "CS",
+        "major": "AI",
+        "enrollment_year": 2021,
+        "id": 111,
+        "created_at": datetime.datetime(1, 1, 1,1, 1, 1, 1)
+    }
+    user = TypeAdapter(UserOut).validate_python(user)
+    print(user)

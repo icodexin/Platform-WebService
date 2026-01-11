@@ -16,3 +16,8 @@ class StudentTypeEnum(str, Enum):
     undergraduate = "undergraduate"
     master = "master"
     phd = "phd"
+
+
+class TokenTypeEnum(str, Enum):
+    access = "access"
+    refresh = "refresh"

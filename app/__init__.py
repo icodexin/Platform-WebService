@@ -7,4 +7,5 @@ from app.models import (
     Permission,
     UserRole,
     RolePermission,
+    TokenBlocklist,
 )
