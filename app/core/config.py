@@ -1,4 +1,5 @@
 from urllib.parse import quote
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,7 +39,10 @@ class Settings(BaseSettings):
         password = quote(self.RABBITMQ_PASSWORD, safe='')
         return f"amqp://{username}:{password}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}/"
 
-    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')
+    model_config = SettingsConfigDict(
+        env_file=Path(__file__).parent.parent.parent / ".env",
+        env_file_encoding='utf-8'
+    )
 
 
 settings = Settings()

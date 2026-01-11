@@ -15,7 +15,7 @@ dependencies = [
     "pwdlib[argon2]>=0.3.0",
     "pydantic-settings>=2.11.0",
     "python-jose>=3.5.0",
-    "sqlalchemy>=2.0.44",
+    "sqlalchemy[asyncio]>=2.0.44",
 ]
 
 [[tool.uv.index]]

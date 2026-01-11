@@ -1,28 +1,10 @@
-import enum
 from datetime import date
 
 from sqlalchemy import Date, Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.common.enum import GenderEnum, StudentTypeEnum, UserTypeEnum
 from app.core.db import Base, TimestampMixin
-
-
-class UserTypeEnum(str, enum.Enum):
-    student = "student"
-    teacher = "teacher"
-    admin = "admin"
-
-
-class GenderEnum(str, enum.Enum):
-    male = "male"
-    female = "female"
-    unknown = "unknown"
-
-
-class StudentTypeEnum(str, enum.Enum):
-    undergraduate = "undergraduate"
-    master = "master"
-    phd = "phd"
 
 
 class User(Base, TimestampMixin):
