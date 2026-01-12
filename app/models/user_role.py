@@ -3,6 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, TimestampMixin
 
+
 class UserRole(Base, TimestampMixin):
     """用户-角色关系表"""
     __tablename__ = 'user_role'

@@ -1,10 +1,9 @@
-import datetime
 from datetime import date
 from typing import Annotated, Literal, Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.common.enum import GenderEnum, StudentTypeEnum, UserTypeEnum
+from app.common.enums import GenderEnum, StudentTypeEnum, UserTypeEnum
 from app.core.security import get_password_hash
 
 
@@ -100,21 +99,3 @@ UserResponse = Annotated[
     Union[StudentResponse, TeacherResponse, AdminResponse],
     Field(discriminator='user_type')
 ]
-
-
-if __name__ == '__main__':
-    from pydantic import TypeAdapter
-    user = {
-        "user_type":'student',
-        "is_active":True,
-        "unified_id":'123456',
-        "name":"test",
-        "student_type":StudentTypeEnum.undergraduate,
-        "college": "CS",
-        "major": "AI",
-        "enrollment_year": 2021,
-        "id": 111,
-        "created_at": datetime.datetime(1, 1, 1,1, 1, 1, 1)
-    }
-    user = TypeAdapter(UserOut).validate_python(user)
-    print(user)

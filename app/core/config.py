@@ -1,5 +1,6 @@
-from urllib.parse import quote
 from pathlib import Path
+from urllib.parse import quote
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,7 +33,7 @@ class Settings(BaseSettings):
             f"postgresql+asyncpg://{username}:{password}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
-    
+
     @property
     def RABBITMQ_URL(self) -> str:
         username = quote(self.RABBITMQ_USER, safe='')

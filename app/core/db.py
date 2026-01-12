@@ -23,9 +23,11 @@ AsyncSessionLocal: Callable[[], AsyncSession] = async_sessionmaker(
     expire_on_commit=True,  # 在事务提交后使会话中的对象过期
 )
 
+
 # ORM基类
 class Base(DeclarativeBase):
     metadata = MetaData()
+
 
 # 时间戳混入
 class TimestampMixin:
@@ -42,6 +44,7 @@ class TimestampMixin:
         nullable=False,
         comment="updated time"
     )
+
 
 # 数据库依赖注入
 async def get_db():

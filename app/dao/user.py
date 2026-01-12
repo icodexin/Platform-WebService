@@ -1,5 +1,5 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.role import Role
 from app.models.user import StudentProfile, TeacherProfile, User
@@ -10,22 +10,22 @@ from app.schemas.user import StudentCreate, TeacherCreate
 class UserDAO:
     def __init__(self, db: AsyncSession):
         self.db = db
-    
-    async def get_user_by_id(self, id: int):
-        return await self.db.get(User, id)
-    
+
+    async def get_user_by_id(self, uid: int):
+        return await self.db.get(User, uid)
+
     async def get_user_by_unified_id(self, unified_id: str):
         result = await self.db.execute(
             select(User).filter(User.unified_id == unified_id)
         )
         return result.scalars().first()
-    
+
     async def get_role_by_code(self, role_code: str):
         result = await self.db.execute(
             select(Role).filter(Role.code == role_code)
         )
         return result.scalars().first()
-    
+
     async def create_student(self, student: StudentCreate):
         try:
             # 1. 创建用户
@@ -51,7 +51,7 @@ class UserDAO:
         except Exception as e:
             await self.db.rollback()
             raise e
-    
+
     async def create_teacher(self, teacher: TeacherCreate):
         try:
             # 1. 创建用户

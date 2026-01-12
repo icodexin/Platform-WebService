@@ -1,12 +1,13 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, func, String
+from sqlalchemy import DateTime, Enum, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.common.enum import TokenTypeEnum
+from app.common.enums import TokenTypeEnum
 from app.core.db import Base
+
 
 class TokenBlocklist(Base):
     """Token黑名单表"""

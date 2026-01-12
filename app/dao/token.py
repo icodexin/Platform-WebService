@@ -1,14 +1,24 @@
+import uuid
 from datetime import datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.common.enum import TokenTypeEnum
+from app.common.enums import TokenTypeEnum
 from app.models.token import TokenBlocklist
+
 
 class TokenBlocklistDAO:
     def __init__(self, db: AsyncSession):
         self.db = db
-    
-    async def add(self, jti: str, user_id: int, token_type: TokenTypeEnum, expires_at: datetime, revoked_reason: str = None):
+
+    async def add(
+        self,
+        jti: uuid.UUID,
+        user_id: int,
+        token_type: TokenTypeEnum,
+        expires_at: datetime,
+        revoked_reason: str = None
+    ):
         try:
             token = TokenBlocklist(
                 jti=jti,
@@ -24,7 +34,7 @@ class TokenBlocklistDAO:
         except Exception as e:
             await self.db.rollback()
             raise e
-    
+
     async def is_token_revoked(self, jti: str) -> bool:
         token = await self.db.get(TokenBlocklist, jti)
         return token is not None

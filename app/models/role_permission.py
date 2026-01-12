@@ -3,6 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, TimestampMixin
 
+
 class RolePermission(Base, TimestampMixin):
     """角色权限关联表"""
     __tablename__ = 'role_permission'

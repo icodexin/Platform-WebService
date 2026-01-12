@@ -3,7 +3,7 @@ from datetime import date
 from sqlalchemy import Date, Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.common.enum import GenderEnum, StudentTypeEnum, UserTypeEnum
+from app.common.enums import GenderEnum, StudentTypeEnum, UserTypeEnum
 from app.core.db import Base, TimestampMixin
 
 

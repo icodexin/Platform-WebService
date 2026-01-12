@@ -23,7 +23,7 @@ def get_password_hash(password: str):
     return pwd_context.hash(password)
 
 
-def create_token(data: dict, token_type: str, expires_delta: timedelta, expire_at : datetime = None):
+def create_token(data: dict, token_type: str, expires_delta: timedelta, expire_at: datetime = None):
     """
     创建 JWT 令牌
     :param data: 包含用户信息的字典
@@ -44,13 +44,13 @@ def create_token(data: dict, token_type: str, expires_delta: timedelta, expire_a
     return jwt.encode(to_encode, settings.TOKEN_KEY, algorithm=settings.ENCRYPTION_ALGORITHM)
 
 
-def create_access_token(user_id: str, expires_delta: timedelta = None, expire_at: datetime = None):
+def create_access_token(user_id: str | int, expires_delta: timedelta = None, expire_at: datetime = None):
     if expires_delta is None:
         expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return create_token({"sub": user_id}, "access", expires_delta, expire_at)
+    return create_token({"sub": str(user_id)}, "access", expires_delta, expire_at)
 
 
-def create_refresh_token(user_id: str, expires_delta: timedelta = None, expire_at: datetime = None):
+def create_refresh_token(user_id: str | int, expires_delta: timedelta = None, expire_at: datetime = None):
     if expires_delta is None:
         expires_delta = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    return create_token({"sub": user_id}, "refresh", expires_delta, expire_at)
+    return create_token({"sub": str(user_id)}, "refresh", expires_delta, expire_at)

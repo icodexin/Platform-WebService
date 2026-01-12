@@ -2,10 +2,12 @@ from fastapi import Depends, HTTPException, status
 from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.enums import TokenTypeEnum
 from app.core.db import get_db
-from app.dao import UserDAO
 from app.core.security import oauth2_scheme
-from app.schemas.user import AdminResponse, StudentCreate, StudentResponse, StudentProfile, TeacherCreate, TeacherResponse, TeacherProfile, UserCreate, UserOut, UserResponse
+from app.dao import UserDAO
+from app.schemas.user import (AdminResponse, StudentCreate, StudentProfile, StudentResponse, TeacherCreate,
+                              TeacherProfile, TeacherResponse, UserCreate, UserOut, UserResponse)
 from app.services.auth import verify_token
 
 
@@ -36,7 +38,7 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> UserResponse:
-    payload = await verify_token(token, "access", db=db)
+    payload = await verify_token(token, TokenTypeEnum.access, db=db)
     uid = int(payload.get("sub")) if payload else None
     if not uid:
         raise HTTPException(
@@ -51,10 +53,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # 获取基础用户数据
     user_data = UserOut.model_validate(user)
-    
+
     # 根据用户类型加载对应的 profile
     if user.user_type == "student" and user.student_profile:
         profile = user.student_profile
@@ -72,9 +74,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
             detail="User profile not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
 
-async def get_current_activate_user(current_user: UserOut = Depends(get_current_user)):
+
+async def get_current_activate_user(current_user: UserResponse = Depends(get_current_user)):
     if not current_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

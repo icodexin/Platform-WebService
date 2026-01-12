@@ -1,13 +1,16 @@
-from datetime import datetime
 import sys
+import uuid
+from datetime import datetime
 
 from fastapi import Depends
-from jose import jwt, JWTError
+from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.enums import TokenTypeEnum
 from app.core import get_db, settings
 from app.core.security import verify_password
-from app.dao import UserDAO, TokenBlocklistDAO
+from app.dao import TokenBlocklistDAO, UserDAO
+
 
 async def authenticate_user(unified_id: str, password: str, db: AsyncSession = Depends(get_db)):
     """
@@ -23,7 +26,12 @@ async def authenticate_user(unified_id: str, password: str, db: AsyncSession = D
     return user
 
 
-async def verify_token(token: str, token_type: str, verify_revoked: bool = True, db: AsyncSession = Depends(get_db)):
+async def verify_token(
+    token: str,
+    token_type: TokenTypeEnum,
+    verify_revoked: bool = True,
+    db: AsyncSession = Depends(get_db)
+):
     """
     解码并验证 JWT 令牌的有效性和类型
     :param token: JWT 令牌字符串
@@ -48,7 +56,14 @@ async def verify_token(token: str, token_type: str, verify_revoked: bool = True,
         return None
 
 
-async def revoke_token(jti: str, user_id: str, token_type: str, expires_at: datetime, revoked_reason: str = None, db: AsyncSession = Depends(get_db)):
+async def revoke_token(
+    jti: str | uuid.UUID,
+    user_id: int | str,
+    token_type: TokenTypeEnum,
+    expires_at: datetime,
+    revoked_reason: str = None,
+    db: AsyncSession = Depends(get_db)
+):
     """
     撤销令牌
     :param jti: JWT ID, 用于唯一标识令牌
@@ -59,4 +74,4 @@ async def revoke_token(jti: str, user_id: str, token_type: str, expires_at: date
     :param db: 数据库会话
     :return: 被撤销的令牌实体
     """
-    return await TokenBlocklistDAO(db).add(jti, user_id, token_type, expires_at, revoked_reason)
+    return await TokenBlocklistDAO(db).add(uuid.UUID(jti), int(user_id), token_type, expires_at, revoked_reason)
