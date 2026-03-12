@@ -39,6 +39,20 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+  mediamtx:
+    image: bluenviron/mediamtx:1
+    environment:
+      MTX_RTSPTRANSPORTS: tcp,udp
+    ports:
+      - "8554:8554"    # RTSP 端口
+      - "1935:1935"    # RTMP 端口
+      - "8888:8888"    # HLS 端口
+      - "8889:8889"    # WebRTC 端口
+      - "9997:9997"    # API 端口
+      - "8000:8000/udp" # RTP UDP 端口
+      - "8001:8001/udp" # RTCP UDP 端口
+      - "8890:8890/udp" # SRT UDP 端口
+      - "8189:8189/udp" # WebRTC UDP 端口
 
 volumes: # 持久化数据卷
   timescaledb-data:
