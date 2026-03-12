@@ -1,4 +1,5 @@
 from datetime import datetime
+import sys
 from typing import Callable
 
 from sqlalchemy import DateTime, MetaData, func

@@ -12,7 +12,15 @@ pwd_context = PasswordHash((
     Argon2Hasher(),
 ))
 
+# 适用于强制登录的接口
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token", scheme_name="JWT", refreshUrl="/auth/refresh")
+# 适用于可选登录的接口
+optional_oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/auth/token",
+    scheme_name="JWTOptional",
+    refreshUrl="/auth/refresh",
+    auto_error=False,
+)
 
 
 def verify_password(plain_password: str, hashed_password: str):
