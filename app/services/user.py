@@ -16,6 +16,9 @@ from app.schemas.user import (
     TeacherResponse,
     UserCreate,
     UserListResponse,
+    UserRoleAssignmentResponse,
+    UserRoleAssignmentUpdate,
+    UserRoleSummary,
     UserResponse,
     UserUpdate,
 )
@@ -26,9 +29,12 @@ from app.common.permissions import (
     USER_DEACTIVATE_SELF,
     USER_READ_ALL,
     USER_READ_SELF,
+    USER_ROLE_UPDATE_ALL,
     USER_UPDATE_ALL,
     USER_UPDATE_SELF,
 )
+
+BUILTIN_ROLE_CODES = frozenset({"admin", "teacher", "student"})
 
 
 def user_list_pagination(
@@ -175,6 +181,53 @@ async def deactivate_user(user_id: int, db: AsyncSession, current_user: User | N
             headers={"WWW-Authenticate": "Bearer"},
         )
     await UserDAO(db).deactivate_user(user)
+
+
+async def get_user_role_assignment(user_id: int, db: AsyncSession) -> UserRoleAssignmentResponse:
+    user = await _get_user_or_404(user_id=user_id, db=db)
+    immutable_role = _get_immutable_system_role(user)
+    return UserRoleAssignmentResponse(
+        user_id=user.id,
+        immutable_role=_serialize_user_role(immutable_role),
+        roles=[_serialize_user_role(role) for role in sorted(user.roles, key=lambda item: item.id)],
+    )
+
+
+async def update_user_role_assignment(
+    user_id: int,
+    payload: UserRoleAssignmentUpdate,
+    db: AsyncSession,
+) -> UserRoleAssignmentResponse:
+    dao = UserDAO(db)
+    user = await _get_user_or_404(user_id=user_id, db=db)
+    immutable_role = _get_immutable_system_role(user)
+
+    normalized_role_ids = list(dict.fromkeys(payload.role_ids))
+    roles = await dao.get_roles_by_ids(normalized_role_ids)
+    if len(roles) != len(normalized_role_ids):
+        existing_ids = {role.id for role in roles}
+        missing_ids = [role_id for role_id in normalized_role_ids if role_id not in existing_ids]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"角色不存在: {missing_ids}",
+        )
+
+    for role in roles:
+        if role.code in BUILTIN_ROLE_CODES and role.id != immutable_role.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="不能为用户分配其他系统角色",
+            )
+
+    final_roles = [immutable_role]
+    final_roles.extend(role for role in roles if role.id != immutable_role.id)
+    updated_user = await dao.replace_user_roles(user=user, roles=final_roles)
+    updated_immutable_role = _get_immutable_system_role(updated_user)
+    return UserRoleAssignmentResponse(
+        user_id=updated_user.id,
+        immutable_role=_serialize_user_role(updated_immutable_role),
+        roles=[_serialize_user_role(role) for role in sorted(updated_user.roles, key=lambda item: item.id)],
+    )
 
 
 async def get_current_user_entity(
@@ -354,6 +407,15 @@ async def ensure_can_deactivate_user(target_user_id: int, current_user: User, db
     )
 
 
+async def ensure_can_update_user_roles(current_user: User, db: AsyncSession):
+    await _ensure_permission(
+        current_user=current_user,
+        db=db,
+        permission_code=USER_ROLE_UPDATE_ALL.code,
+        detail="无权限修改用户角色",
+    )
+
+
 async def _ensure_user_scope_permission(
     target_user_id: int,
     current_user: User,
@@ -404,3 +466,24 @@ async def _ensure_permission(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=detail,
         )
+
+
+def _get_immutable_system_role(user: User):
+    immutable_role_code = user.user_type.value
+    for role in user.roles:
+        if role.code == immutable_role_code:
+            return role
+
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="用户缺少必需的系统角色",
+    )
+
+
+def _serialize_user_role(role) -> UserRoleSummary:
+    return UserRoleSummary(
+        id=role.id,
+        code=role.code,
+        name=role.name,
+        is_system=role.code in BUILTIN_ROLE_CODES,
+    )

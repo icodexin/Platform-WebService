@@ -191,3 +191,20 @@ class UserListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class UserRoleSummary(BaseModel):
+    id: int
+    code: str
+    name: str
+    is_system: bool
+
+
+class UserRoleAssignmentUpdate(BaseModel):
+    role_ids: list[int] = Field(default_factory=list)
+
+
+class UserRoleAssignmentResponse(BaseModel):
+    user_id: int
+    immutable_role: UserRoleSummary
+    roles: list[UserRoleSummary]

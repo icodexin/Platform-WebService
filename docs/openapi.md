@@ -50,6 +50,7 @@ Authorization: Bearer <access_token>
 | `sys.user.deactivate.self` | 注销当前用户账号 |
 | `sys.user.deactivate.all` | 注销全部用户账号 |
 | `sys.user.create.admin` | 创建管理员用户 |
+| `sys.user.role.update.all` | 修改用户角色 |
 
 ### 范围语义
 
@@ -65,7 +66,7 @@ Authorization: Bearer <access_token>
 
 | 角色 | 默认权限 |
 | --- | --- |
-| `admin` | `permission.manage` `role.manage` `read.self` `read.all` `update.self` `update.all` `deactivate.self` `deactivate.all` `create.admin` |
+| `admin` | `permission.manage` `role.manage` `read.self` `read.all` `update.self` `update.all` `deactivate.self` `deactivate.all` `create.admin` `role.update.all` |
 | `teacher` | `read.self` `update.self` `deactivate.self` |
 | `student` | `read.self` `update.self` `deactivate.self` |
 
@@ -239,6 +240,72 @@ Authorization: Bearer <access_token>
 - 学生不能更新教师资料字段
 - 教师不能更新学生资料字段
 - 管理员没有学生/教师扩展资料字段
+
+### `GET /api/users/{user_id}/roles`
+
+获取指定用户的角色绑定。
+
+权限要求：
+
+- 读自己：`sys.user.read.self` 或 `sys.user.read.all`
+- 读他人：`sys.user.read.all`
+
+响应说明：
+
+- `immutable_role` 表示该用户随 `user_type` 固定绑定的系统角色
+- `roles` 表示当前全部角色集合，包含 `immutable_role`
+
+响应示例：
+
+```json
+{
+  "user_id": 12,
+  "immutable_role": {
+    "id": 3,
+    "code": "student",
+    "name": "学生",
+    "is_system": true
+  },
+  "roles": [
+    {
+      "id": 3,
+      "code": "student",
+      "name": "学生",
+      "is_system": true
+    },
+    {
+      "id": 8,
+      "code": "biz.research.viewer",
+      "name": "科研只读角色",
+      "is_system": false
+    }
+  ]
+}
+```
+
+### `PUT /api/users/{user_id}/roles`
+
+整体更新指定用户的角色绑定。
+
+权限要求：
+
+- `sys.user.role.update.all`
+
+请求体示例：
+
+```json
+{
+  "role_ids": [8, 9]
+}
+```
+
+业务约束：
+
+- 用户初始绑定的系统角色不可移除或替换
+- 例如学生始终保留 `student`，教师始终保留 `teacher`，管理员始终保留 `admin`
+- 不允许给用户额外分配其他系统角色
+- `role_ids` 只需要传“希望附加的角色集合”，系统会自动保留该用户不可变的系统角色
+- 传入的角色 ID 必须全部存在
 
 ### `POST /api/users/me/deactivate`
 
@@ -429,6 +496,7 @@ Authorization: Bearer <access_token>
 ## 已验证的典型行为
 
 - 管理员可以登录、查看自己、查看列表、查看他人、修改自己、创建管理员、停用他人
+- 管理员可以查看用户当前角色，并在保留系统角色的前提下为用户增删自定义角色
 - 管理员可以查看角色列表、创建角色、修改角色权限、删除未绑定用户的自定义角色
 - 学生可以登录、查看自己、修改自己，不能查看他人、不能看列表、不能创建管理员、不能停用他人
 - 教师可以登录、查看自己、修改自己，不能查看他人、不能看列表、不能停用他人

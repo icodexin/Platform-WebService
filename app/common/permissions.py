@@ -52,6 +52,11 @@ USER_CREATE_ADMIN = BuiltinPermission(
     name="创建管理员用户",
 )
 
+USER_ROLE_UPDATE_ALL = BuiltinPermission(
+    code="sys.user.role.update.all",
+    name="修改用户角色",
+)
+
 MESSAGING_BROKER_MANAGE = BuiltinPermission(
     code="cap.messaging.broker.manage",
     name="消息代理管理",
@@ -67,6 +72,7 @@ BUILTIN_PERMISSIONS = (
     USER_DEACTIVATE_SELF,
     USER_DEACTIVATE_ALL,
     USER_CREATE_ADMIN,
+    USER_ROLE_UPDATE_ALL,
     MESSAGING_BROKER_MANAGE,
 )
 

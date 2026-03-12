@@ -7,7 +7,14 @@ from app.common.enums import UserTypeEnum
 from app.common.permissions import USER_READ_ALL
 from app.core import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserListResponse, UserResponse, UserUpdate
+from app.schemas.user import (
+    UserCreate,
+    UserListResponse,
+    UserResponse,
+    UserRoleAssignmentResponse,
+    UserRoleAssignmentUpdate,
+    UserUpdate,
+)
 from app.services.permission import require_permission
 from app.services.user import (
     ensure_can_deactivate_current_user,
@@ -16,13 +23,16 @@ from app.services.user import (
     create_user,
     deactivate_user,
     ensure_can_read_user,
+    ensure_can_update_user_roles,
     ensure_can_update_user,
     get_current_active_user_entity,
     get_current_user,
     get_optional_current_user_entity,
     get_user_detail,
+    get_user_role_assignment,
     list_users,
     update_user,
+    update_user_role_assignment,
     user_list_pagination,
 )
 
@@ -91,6 +101,29 @@ async def update_user_endpoint(
     """更新用户"""
     await ensure_can_update_user(target_user_id=user_id, current_user=current_user, db=db)
     return await update_user(user_id=user_id, payload=payload, db=db, current_user=current_user)
+
+
+@router.get("/{user_id}/roles", response_model=UserRoleAssignmentResponse)
+async def get_user_roles_endpoint(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user_entity),
+):
+    """获取用户角色绑定"""
+    await ensure_can_read_user(target_user_id=user_id, current_user=current_user, db=db)
+    return await get_user_role_assignment(user_id=user_id, db=db)
+
+
+@router.put("/{user_id}/roles", response_model=UserRoleAssignmentResponse)
+async def update_user_roles_endpoint(
+    user_id: int,
+    payload: UserRoleAssignmentUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user_entity),
+):
+    """更新用户角色绑定"""
+    await ensure_can_update_user_roles(current_user=current_user, db=db)
+    return await update_user_role_assignment(user_id=user_id, payload=payload, db=db)
 
 
 @router.post("/me/deactivate", response_model=dict)

@@ -41,6 +41,14 @@ class UserDAO:
         result = await self.db.execute(select(Role).where(Role.code == role_code))
         return result.scalars().first()
 
+    async def get_roles_by_ids(self, role_ids: list[int]):
+        if not role_ids:
+            return []
+        result = await self.db.execute(
+            select(Role).where(Role.id.in_(role_ids)).order_by(Role.id.asc())
+        )
+        return result.scalars().all()
+
     async def get_user_roles(self, user_id: int):
         result = await self.db.execute(select(Role).join(UserRole).where(UserRole.user_id == user_id))
         return result.scalars().all()
@@ -145,6 +153,16 @@ class UserDAO:
         try:
             user.is_active = False
             await self.db.commit()
+        except Exception:
+            await self.db.rollback()
+            raise
+
+    async def replace_user_roles(self, user: User, roles: list[Role]):
+        try:
+            user_id = user.id
+            user.roles = roles
+            await self.db.commit()
+            return await self.get_user_by_id(user_id)
         except Exception:
             await self.db.rollback()
             raise
