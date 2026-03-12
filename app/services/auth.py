@@ -2,7 +2,7 @@ import sys
 import uuid
 from datetime import datetime
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,6 +23,27 @@ async def authenticate_user(unified_id: str, password: str, db: AsyncSession = D
     user = await UserDAO(db).get_user_by_unified_id(unified_id)
     if not user or not verify_password(password, user.password_hash):
         return None
+    return user
+
+
+def ensure_user_is_active(user) -> None:
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+async def get_active_user_by_id(user_id: int | str, db: AsyncSession):
+    user = await UserDAO(db).get_user_by_id(int(user_id))
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    ensure_user_is_active(user)
     return user
 
 

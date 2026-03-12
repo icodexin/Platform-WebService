@@ -8,7 +8,13 @@ from app.common.enums import TokenTypeEnum
 from app.core import get_db
 from app.core.security import create_access_token, create_refresh_token, oauth2_scheme
 from app.schemas.token import TokenResponse
-from app.services.auth import authenticate_user, revoke_token, verify_token
+from app.services.auth import (
+    authenticate_user,
+    ensure_user_is_active,
+    get_active_user_by_id,
+    revoke_token,
+    verify_token,
+)
 
 router = APIRouter(prefix="/auth")
 
@@ -28,6 +34,7 @@ async def token_endpoint(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    ensure_user_is_active(user)
     uid = user.id
     access_token = create_access_token(uid)
     refresh_token = create_refresh_token(uid)
@@ -48,6 +55,8 @@ async def refresh_token_endpoint(
             detail="Invalid or expired refresh token",
             headers={"WWW-Authenticate": "Bearer"}
         )
+
+    await get_active_user_by_id(payload["sub"], db)
 
     # 拉黑旧令牌
     jti = payload["jti"]
