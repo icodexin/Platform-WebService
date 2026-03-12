@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.enums import TokenTypeEnum
@@ -38,3 +39,13 @@ class TokenBlocklistDAO:
     async def is_token_revoked(self, jti: str) -> bool:
         token = await self.db.get(TokenBlocklist, jti)
         return token is not None
+    
+    async def remove_expired_tokens(self):
+        try:
+            now = datetime.now(datetime.timezone.utc)
+            stmt = delete(TokenBlocklist).where(TokenBlocklist.expires_at < now)
+            await self.db.execute(stmt)
+            await self.db.commit()
+        except Exception as e:
+            await self.db.rollback()
+            raise e
