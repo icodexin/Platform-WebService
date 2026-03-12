@@ -188,6 +188,7 @@ RabbitMQ 已启用以下插件：
 - `rabbitmq_event_exchange`
 - `rabbitmq_mqtt`
 - `rabbitmq_auth_backend_http`
+- `rabbitmq_auth_backend_cache`
 
 ### 4. 执行数据库迁移
 
@@ -255,6 +256,20 @@ RabbitMQ HTTP 后端配置入口：
 当前对 RabbitMQ 暴露的实际访问前缀为：
 
 - `/mq/auth`
+
+当前认证链路为：
+
+- `internal -> cache(http)`
+
+当前缓存策略为：
+
+- `auth_cache.cache_ttl = 60000`
+- `auth_cache.cache_refusals = false`
+
+说明：
+
+- RabbitMQ 会优先使用内部数据库中的用户、vhost 权限和资源权限
+- 当内部数据库未命中时，再回退到带缓存的 HTTP 认证后端
 
 ## 当前边界与注意事项
 
