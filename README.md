@@ -128,7 +128,9 @@
 - MQTT 插件
 
 说明：
-- 仓库中存在 `app/api/rabbitmq.py`，但仍是未完成的接入草稿，尚未由 `app/main.py` 注册到运行中的 FastAPI 应用。
+- 已实现 RabbitMQ HTTP Auth Backend 四个认证接口，并已接入 `app/main.py`
+- RabbitMQ 容器配置文件位于 `config/rabbitmq/rabbitmq.conf` 和 `config/rabbitmq/enabled_plugins`
+- 当前容器内通过 `host.docker.internal:8000` 访问 FastAPI 认证接口，本地开发时需先启动 Web 服务
 
 ### 流媒体
 
@@ -180,6 +182,13 @@ docker compose up -d
 - RabbitMQ
 - MediaMTX
 
+RabbitMQ 已启用以下插件：
+
+- `rabbitmq_management`
+- `rabbitmq_event_exchange`
+- `rabbitmq_mqtt`
+- `rabbitmq_auth_backend_http`
+
 ### 4. 执行数据库迁移
 
 ```bash
@@ -215,13 +224,41 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 - 推理服务放到 `app/inference/`
 - 后台任务放到 `app/jobs/`
 
+## RabbitMQ 权限映射
+
+当前仓库已经实现 RabbitMQ HTTP Auth Backend 四个接口：
+
+- `POST /auth/user`
+- `POST /auth/vhost`
+- `POST /auth/resource`
+- `POST /auth/topic`
+
+业务权限命名和 RabbitMQ 映射规范见：
+
+- `docs/messaging-permissions.md`
+- `docs/messaging-permissions.zh-CN.md`
+
+当前采用两层模型：
+
+- `Role -> Permission` 表达业务能力
+- `Permission -> rabbitmq_permission_binding` 表达 RabbitMQ 技术授权规则
+
+默认已种子化一条管理员权限：
+
+- `cap.messaging.broker.manage`
+
+RabbitMQ HTTP 后端配置入口：
+
+- `config/rabbitmq/rabbitmq.conf`
+- `config/rabbitmq/enabled_plugins`
+
 ## 当前边界与注意事项
 
 目前不要误判为“已完整实现”的能力：
 
 - WebSocket 实时服务
 - 推理服务
-- 完整 RabbitMQ 认证/授权后端
+- 面向具体业务域的大规模 RabbitMQ 权限种子数据
 - 细粒度权限校验中间件
 - 自动化测试体系
 

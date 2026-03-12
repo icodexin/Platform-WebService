@@ -22,18 +22,14 @@ services:
       - "1883:1883"    # MQTT 端口
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-    #      - ./config/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./config/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
       RABBITMQ_CONFIG_FILE: /etc/rabbitmq/rabbitmq.conf
-    command:
-      - /bin/bash
-      - -c
-      - |
-        rabbitmq-plugins enable rabbitmq_event_exchange
-        rabbitmq-plugins enable rabbitmq_mqtt --offline
-        docker-entrypoint.sh rabbitmq-server
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 30s

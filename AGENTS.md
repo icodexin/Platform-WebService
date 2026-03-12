@@ -62,7 +62,7 @@ HTTP route layer.
 Current routes:
 - `auth.py`: login, refresh token, logout
 - `users.py`: user creation and current-user query
-- `rabbitmq.py`: unfinished RabbitMQ auth backend adapter stub; not currently included by `app/main.py`
+- `rabbitmq.py`: RabbitMQ HTTP auth backend endpoints (`/auth/user`, `/auth/vhost`, `/auth/resource`, `/auth/topic`)
 
 Rule:
 - Keep route handlers thin.
@@ -75,6 +75,7 @@ Business service layer.
 Current responsibilities:
 - `auth.py`: credential validation, JWT verification, token revocation
 - `user.py`: user creation orchestration, current user resolution, active-user checks
+- `rabbitmq_auth.py`: RabbitMQ HTTP auth backend decision logic and binding-based permission matching
 
 Rule:
 - Put cross-DAO business logic here.
@@ -98,6 +99,7 @@ Current model groups:
 - User base model: `User`
 - User subtype profiles: `StudentProfile`, `TeacherProfile`
 - RBAC models: `Role`, `Permission`, `UserRole`, `RolePermission`
+- Messaging authorization model: `RabbitMQPermissionBinding`
 - Security model: `TokenBlocklist`
 
 Current domain model:
@@ -165,12 +167,11 @@ Manual HTTP test assets (`.http` and environment file), not a full automated tes
 These capabilities are not fully established yet:
 - No WebSocket endpoint module is wired into the app
 - No inference service module exists yet
-- No completed RabbitMQ auth backend implementation is exposed by the running FastAPI app
+- RabbitMQ HTTP auth backend exists, but business-specific permission seeds and broker topology conventions are still at an early stage
 - No complete permission-check middleware/dependency layer is present yet
 - No comprehensive automated test suite is present yet
 
 Be careful:
-- `app/api/rabbitmq.py` is only a partial stub and should not be treated as production-ready behavior.
 - Some repository descriptions are broader than the currently delivered code.
 
 ## 7. Recommended Extension Direction
@@ -197,6 +198,8 @@ When analyzing or editing this repository, assume the following:
 - The most stable, production-like part of the codebase is user/auth/RBAC/data-modeling
 - Infrastructure declarations are ahead of application integration in several areas
 - Schema and business rules should be inferred from `app/models/`, `app/schemas/`, `app/services/`, and Alembic migrations first, not from the README
+- Messaging business permission naming and RabbitMQ mapping rules are documented in `docs/messaging-permissions.md`
+- RabbitMQ authorization is implemented as `Role -> Permission -> rabbitmq_permission_binding`, not by binding roles directly to queue or exchange names
 
 Preferred reading order for future work:
 1. `app/main.py`
