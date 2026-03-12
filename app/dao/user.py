@@ -26,6 +26,12 @@ class UserDAO:
         )
         return result.scalars().first()
 
+    async def get_user_roles(self, user_id: int):
+        result = await self.db.execute(
+            select(Role).join(UserRole).filter(UserRole.user_id == user_id)
+        )
+        return result.scalars().all()
+
     async def create_student(self, student: StudentCreate):
         try:
             # 1. 创建用户
