@@ -36,7 +36,7 @@ app = FastAPI(
 )
 
 app.include_router(auth_router, tags=["Authentication"])
-app.include_router(rabbitmq_router, tags=["RabbitMQ Auth Backend"])
+app.include_router(rabbitmq_router, prefix='/mq', tags=["RabbitMQ Auth Backend"])
 app.include_router(users_router, prefix="/api", tags=["Users"])
 
 

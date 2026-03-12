@@ -22,7 +22,7 @@ from app.core.config import settings
 
 # 导入所有模型以确保 alembic 能够检测到它们
 from app.models import (
-    User, StudentProfile, TeacherProfile, Role, Permission, UserRole, RolePermission,
+    User, StudentProfile, TeacherProfile, Role, Permission, RabbitMQPermissionBinding, UserRole, RolePermission,
     TokenBlocklist
 )
 

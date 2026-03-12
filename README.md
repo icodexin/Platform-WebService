@@ -228,10 +228,10 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 当前仓库已经实现 RabbitMQ HTTP Auth Backend 四个接口：
 
-- `POST /auth/user`
-- `POST /auth/vhost`
-- `POST /auth/resource`
-- `POST /auth/topic`
+- `POST /mq/auth/user`
+- `POST /mq/auth/vhost`
+- `POST /mq/auth/resource`
+- `POST /mq/auth/topic`
 
 业务权限命名和 RabbitMQ 映射规范见：
 
@@ -251,6 +251,10 @@ RabbitMQ HTTP 后端配置入口：
 
 - `config/rabbitmq/rabbitmq.conf`
 - `config/rabbitmq/enabled_plugins`
+
+当前对 RabbitMQ 暴露的实际访问前缀为：
+
+- `/mq/auth`
 
 ## 当前边界与注意事项
 

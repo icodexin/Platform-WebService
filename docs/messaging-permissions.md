@@ -89,8 +89,8 @@ Each row represents one RabbitMQ authorization rule.
 | `resource_type` | `exchange`, `queue`, or `topic` when needed |
 | `resource_name_pattern` | shell-style wildcard for queue/exchange name |
 | `permission_level` | `configure`, `write`, or `read` |
-| `routing_key_pattern` | AMQP topic wildcard pattern for `/auth/topic` |
-| `rabbitmq_tag` | management tag for `/auth/user` only |
+| `routing_key_pattern` | AMQP topic wildcard pattern for `/mq/auth/topic` |
+| `rabbitmq_tag` | management tag for `/mq/auth/user` only |
 
 ### 4.2 Matching rules
 
@@ -106,10 +106,10 @@ RabbitMQ HTTP auth backend uses four checks.
 
 | HTTP check | Meaning | Mapping source |
 |---|---|---|
-| `/auth/user` | user authentication and optional management tags | `check_type = user` |
-| `/auth/vhost` | vhost access | `check_type = vhost` |
-| `/auth/resource` | queue/exchange configure, write, read | `check_type = resource` |
-| `/auth/topic` | topic routing-key level control | `check_type = topic` |
+| `/mq/auth/user` | user authentication and optional management tags | `check_type = user` |
+| `/mq/auth/vhost` | vhost access | `check_type = vhost` |
+| `/mq/auth/resource` | queue/exchange configure, write, read | `check_type = resource` |
+| `/mq/auth/topic` | topic routing-key level control | `check_type = topic` |
 
 Important:
 
@@ -211,10 +211,10 @@ Recommended examples:
 The repository currently implements:
 
 - RabbitMQ HTTP auth backend endpoints:
-  - `/auth/user`
-  - `/auth/vhost`
-  - `/auth/resource`
-  - `/auth/topic`
+  - `/mq/auth/user`
+  - `/mq/auth/vhost`
+  - `/mq/auth/resource`
+  - `/mq/auth/topic`
 - `rabbitmq_permission_binding` model and migration
 - matching logic for:
   - management tags

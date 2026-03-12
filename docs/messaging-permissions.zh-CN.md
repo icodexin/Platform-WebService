@@ -93,8 +93,8 @@ mq.exchange.x_infer_result.write
 | `resource_type` | 资源类型，需要时取 `exchange` / `queue` / `topic` |
 | `resource_name_pattern` | queue / exchange 名称匹配模式 |
 | `permission_level` | 授权级别：`configure` / `write` / `read` |
-| `routing_key_pattern` | `/auth/topic` 使用的 AMQP topic wildcard 模式 |
-| `rabbitmq_tag` | `/auth/user` 使用的 RabbitMQ 管理标签 |
+| `routing_key_pattern` | `/mq/auth/topic` 使用的 AMQP topic wildcard 模式 |
+| `rabbitmq_tag` | `/mq/auth/user` 使用的 RabbitMQ 管理标签 |
 
 ### 4.2 匹配规则
 
@@ -110,10 +110,10 @@ RabbitMQ HTTP Auth Backend 会调用四个接口。
 
 | 接口 | 含义 | 对应映射来源 |
 |---|---|---|
-| `/auth/user` | 用户认证，以及返回可选管理标签 | `check_type = user` |
-| `/auth/vhost` | vhost 访问权限校验 | `check_type = vhost` |
-| `/auth/resource` | queue / exchange 的 configure、write、read 校验 | `check_type = resource` |
-| `/auth/topic` | topic exchange 上 routing key 级权限校验 | `check_type = topic` |
+| `/mq/auth/user` | 用户认证，以及返回可选管理标签 | `check_type = user` |
+| `/mq/auth/vhost` | vhost 访问权限校验 | `check_type = vhost` |
+| `/mq/auth/resource` | queue / exchange 的 configure、write、read 校验 | `check_type = resource` |
+| `/mq/auth/topic` | topic exchange 上 routing key 级权限校验 | `check_type = topic` |
 
 需要注意：
 
@@ -215,10 +215,10 @@ check_type=topic     permission_level=read      resource_name_pattern=* routing_
 当前仓库已经实现：
 
 - RabbitMQ HTTP Auth Backend 四个接口
-  - `/auth/user`
-  - `/auth/vhost`
-  - `/auth/resource`
-  - `/auth/topic`
+  - `/mq/auth/user`
+  - `/mq/auth/vhost`
+  - `/mq/auth/resource`
+  - `/mq/auth/topic`
 - `rabbitmq_permission_binding` 模型与 Alembic 迁移
 - 以下匹配逻辑
   - 管理标签匹配

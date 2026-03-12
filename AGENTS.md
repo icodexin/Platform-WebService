@@ -62,7 +62,7 @@ HTTP route layer.
 Current routes:
 - `auth.py`: login, refresh token, logout
 - `users.py`: user creation and current-user query
-- `rabbitmq.py`: RabbitMQ HTTP auth backend endpoints (`/auth/user`, `/auth/vhost`, `/auth/resource`, `/auth/topic`)
+- `rabbitmq.py`: RabbitMQ HTTP auth backend endpoints, currently exposed to RabbitMQ via the `/mq/auth/*` prefix
 
 Rule:
 - Keep route handlers thin.
@@ -200,6 +200,7 @@ When analyzing or editing this repository, assume the following:
 - Schema and business rules should be inferred from `app/models/`, `app/schemas/`, `app/services/`, and Alembic migrations first, not from the README
 - Messaging business permission naming and RabbitMQ mapping rules are documented in `docs/messaging-permissions.md`
 - RabbitMQ authorization is implemented as `Role -> Permission -> rabbitmq_permission_binding`, not by binding roles directly to queue or exchange names
+- RabbitMQ currently calls the service through the `/mq/auth/*` path prefix as configured in `config/rabbitmq/rabbitmq.conf`
 
 Preferred reading order for future work:
 1. `app/main.py`
