@@ -1,5 +1,5 @@
+import datetime as dt
 import uuid
-from datetime import datetime, timezone
 
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +17,7 @@ class TokenBlocklistDAO:
         jti: uuid.UUID,
         user_id: int,
         token_type: TokenTypeEnum,
-        expires_at: datetime,
+        expires_at: dt.datetime,
         revoked_reason: str = None
     ):
         try:
@@ -42,7 +42,7 @@ class TokenBlocklistDAO:
     
     async def remove_expired_tokens(self):
         try:
-            now = datetime.now(timezone.utc)
+            now = dt.datetime.now(dt.timezone.utc)
             stmt = delete(TokenBlocklist).where(TokenBlocklist.expires_at < now)
             await self.db.execute(stmt)
             await self.db.commit()
