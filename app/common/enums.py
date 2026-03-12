@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class UserTypeEnum(str, Enum):
     student = "student"
     teacher = "teacher"
@@ -21,3 +22,29 @@ class StudentTypeEnum(str, Enum):
 class TokenTypeEnum(str, Enum):
     access = "access"
     refresh = "refresh"
+
+
+class RabbitMQAuthCheckEnum(str, Enum):
+    user = "user"
+    vhost = "vhost"
+    resource = "resource"
+    topic = "topic"
+
+
+class RabbitMQPermissionLevelEnum(str, Enum):
+    configure = "configure"
+    write = "write"
+    read = "read"
+
+
+class RabbitMQResourceTypeEnum(str, Enum):
+    exchange = "exchange"
+    queue = "queue"
+    topic = "topic"
+
+
+class RabbitMQTagEnum(str, Enum):
+    management = "management"
+    policymaker = "policymaker"
+    monitoring = "monitoring"
+    administrator = "administrator"

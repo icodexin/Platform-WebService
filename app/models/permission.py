@@ -19,3 +19,9 @@ class Permission(Base, TimestampMixin):
     roles = relationship(
         "Role", secondary="role_permission", back_populates="permissions", lazy="selectin"
     )
+    rabbitmq_bindings = relationship(
+        "RabbitMQPermissionBinding",
+        back_populates="permission",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
