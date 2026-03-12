@@ -5,6 +5,7 @@ from app.models import (
     TeacherProfile,
     Role,
     Permission,
+    RabbitMQPermissionBinding,
     UserRole,
     RolePermission,
     TokenBlocklist,
