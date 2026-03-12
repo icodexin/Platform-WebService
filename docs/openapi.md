@@ -42,6 +42,7 @@ Authorization: Bearer <access_token>
 | 权限码 | 含义 |
 | --- | --- |
 | `sys.permission.manage` | 权限管理 |
+| `sys.role.manage` | 角色管理 |
 | `sys.user.read.self` | 读取当前用户 |
 | `sys.user.read.all` | 读取全部用户 |
 | `sys.user.update.self` | 修改当前用户 |
@@ -64,7 +65,7 @@ Authorization: Bearer <access_token>
 
 | 角色 | 默认权限 |
 | --- | --- |
-| `admin` | `read.self` `read.all` `update.self` `update.all` `deactivate.self` `deactivate.all` `create.admin` |
+| `admin` | `permission.manage` `role.manage` `read.self` `read.all` `update.self` `update.all` `deactivate.self` `deactivate.all` `create.admin` |
 | `teacher` | `read.self` `update.self` `deactivate.self` |
 | `student` | `read.self` `update.self` `deactivate.self` |
 
@@ -323,6 +324,97 @@ Authorization: Bearer <access_token>
 - 系统内置权限不允许修改或删除
 - 已绑定角色的权限不能直接删除
 
+## 角色管理接口
+
+角色管理接口统一要求：
+
+- `sys.role.manage`
+
+### `GET /api/roles/`
+
+分页查询角色列表。
+
+查询参数：
+
+| 参数 | 说明 |
+| --- | --- |
+| `page` | 页码，默认 `1` |
+| `page_size` | 每页条数，默认 `20`，最大 `100` |
+| `keyword` | 按角色编码或名称模糊检索 |
+
+响应说明：
+
+- 返回角色基础信息
+- 返回角色当前绑定的权限列表
+- 返回 `permission_count`、`user_count`
+- 返回 `is_system` 标识是否为内置角色
+
+### `POST /api/roles/`
+
+创建角色。
+
+请求体示例：
+
+```json
+{
+  "code": "biz.ops.viewer",
+  "name": "运维只读角色",
+  "permission_ids": [3, 12]
+}
+```
+
+说明：
+
+- `permission_ids` 可为空数组
+- 所有传入的权限 ID 都必须存在
+- 角色编码必须唯一
+
+### `GET /api/roles/{role_id}`
+
+查询角色详情。
+
+返回内容包含：
+
+- 角色基础信息
+- 角色权限列表
+- 绑定用户数量
+- 是否内置角色
+
+### `PUT /api/roles/{role_id}`
+
+更新角色。
+
+可更新字段：
+
+- `code`
+- `name`
+- `permission_ids`
+
+说明：
+
+- `permission_ids` 传入后会整体覆盖该角色当前的权限绑定
+- 系统内置角色不允许修改
+- 角色编码修改后仍要求全局唯一
+
+请求体示例：
+
+```json
+{
+  "name": "运维只读角色-更新",
+  "permission_ids": [12]
+}
+```
+
+### `DELETE /api/roles/{role_id}`
+
+删除角色。
+
+说明：
+
+- 系统内置角色不允许删除
+- 已绑定用户的角色不允许删除
+- 未绑定用户的自定义角色可以删除
+
 ## 常见响应语义
 
 | 状态码 | 含义 |
@@ -337,6 +429,7 @@ Authorization: Bearer <access_token>
 ## 已验证的典型行为
 
 - 管理员可以登录、查看自己、查看列表、查看他人、修改自己、创建管理员、停用他人
+- 管理员可以查看角色列表、创建角色、修改角色权限、删除未绑定用户的自定义角色
 - 学生可以登录、查看自己、修改自己，不能查看他人、不能看列表、不能创建管理员、不能停用他人
 - 教师可以登录、查看自己、修改自己，不能查看他人、不能看列表、不能停用他人
 - 匿名用户可以注册普通学生/教师，不能访问受保护接口，不能创建管理员

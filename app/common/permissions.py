@@ -12,6 +12,11 @@ PERMISSION_MANAGE = BuiltinPermission(
     name="权限管理",
 )
 
+ROLE_MANAGE = BuiltinPermission(
+    code="sys.role.manage",
+    name="角色管理",
+)
+
 USER_READ_SELF = BuiltinPermission(
     code="sys.user.read.self",
     name="读取当前用户",
@@ -54,6 +59,7 @@ MESSAGING_BROKER_MANAGE = BuiltinPermission(
 
 BUILTIN_PERMISSIONS = (
     PERMISSION_MANAGE,
+    ROLE_MANAGE,
     USER_READ_SELF,
     USER_READ_ALL,
     USER_UPDATE_SELF,
