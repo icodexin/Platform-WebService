@@ -6,6 +6,7 @@ from app.common.enums import TokenTypeEnum
 from app.core.db import get_db
 from app.core.security import oauth2_scheme
 from app.dao import UserDAO
+from app.models.user import User
 from app.schemas.user import (AdminResponse, StudentCreate, StudentProfile, StudentResponse, TeacherCreate,
                               TeacherProfile, TeacherResponse, UserCreate, UserOut, UserResponse)
 from app.services.auth import verify_token
@@ -37,7 +38,10 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     return new_user
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> UserResponse:
+async def get_current_user_entity(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> User:
     payload = await verify_token(token, TokenTypeEnum.access, db=db)
     uid = int(payload.get("sub")) if payload else None
     if not uid:
@@ -53,20 +57,23 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    return user
 
+
+async def get_current_user(current_user: User = Depends(get_current_user_entity)) -> UserResponse:
     # 获取基础用户数据
-    user_data = UserOut.model_validate(user)
+    user_data = UserOut.model_validate(current_user)
 
     # 根据用户类型加载对应的 profile
-    if user.user_type == "student" and user.student_profile:
-        profile = user.student_profile
+    if current_user.user_type == "student" and current_user.student_profile:
+        profile = current_user.student_profile
         profile_data = StudentProfile.model_validate(profile)
         return StudentResponse(**user_data.model_dump(), **profile_data.model_dump())
-    elif user.user_type == "teacher" and user.teacher_profile:
-        profile = user.teacher_profile
+    elif current_user.user_type == "teacher" and current_user.teacher_profile:
+        profile = current_user.teacher_profile
         profile_data = TeacherProfile.model_validate(profile)
         return TeacherResponse(**user_data.model_dump(), **profile_data.model_dump())
-    elif user.user_type == "admin":
+    elif current_user.user_type == "admin":
         return AdminResponse(**user_data.model_dump())
     else:
         raise HTTPException(
@@ -77,6 +84,16 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
 
 
 async def get_current_activate_user(current_user: UserResponse = Depends(get_current_user)):
+    if not current_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return current_user
+
+
+async def get_current_active_user_entity(current_user: User = Depends(get_current_user_entity)):
     if not current_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

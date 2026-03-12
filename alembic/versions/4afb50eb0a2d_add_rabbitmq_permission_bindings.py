@@ -10,15 +10,13 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+from app.common.permissions import MESSAGING_BROKER_MANAGE
 
 # revision identifiers, used by Alembic.
 revision: str = '4afb50eb0a2d'
 down_revision: Union[str, Sequence[str], None] = '2abf087db856'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
-
-# 管理员角色消息业务全量权限标识
-permission_code = 'cap.messaging.broker.manage'
 
 
 def upgrade() -> None:
@@ -52,8 +50,8 @@ def upgrade() -> None:
         permission_table,
         [
             {
-                'code': permission_code,
-                'name': '消息代理管理',
+                'code': MESSAGING_BROKER_MANAGE.code,
+                'name': MESSAGING_BROKER_MANAGE.name,
             }
         ],
     )
@@ -62,7 +60,7 @@ def upgrade() -> None:
         sa.select(role_table.c.id).where(role_table.c.code == 'admin')
     ).scalar_one()
     permission_id = conn.execute(
-        sa.select(permission_table.c.id).where(permission_table.c.code == permission_code)
+        sa.select(permission_table.c.id).where(permission_table.c.code == MESSAGING_BROKER_MANAGE.code)
     ).scalar_one()
 
     op.bulk_insert(
@@ -160,7 +158,7 @@ def downgrade() -> None:
     rabbitmq_binding_table = sa.Table('rabbitmq_permission_binding', sa.MetaData(), autoload_with=conn)
 
     permission_id = conn.execute(
-        sa.select(permission_table.c.id).where(permission_table.c.code == permission_code)
+        sa.select(permission_table.c.id).where(permission_table.c.code == MESSAGING_BROKER_MANAGE.code)
     ).scalar()
 
     if permission_id:

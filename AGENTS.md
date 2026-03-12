@@ -137,6 +137,11 @@ Current migration intent:
 - Initial schema creation
 - Initial RBAC seed data and bootstrap admin account
 
+Migration rule:
+- When creating a new migration script, first generate a normalized Alembic revision via CLI using `alembic revision --autogenerate ...`
+- If autogenerate is not suitable for the change, create a blank revision via Alembic CLI first, then edit that generated file as needed
+- Do not hand-create migration filenames directly before attempting Alembic generation
+
 ### `test/`
 Manual HTTP test assets (`.http` and environment file), not a full automated test suite.
 

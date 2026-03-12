@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from app.api import auth_router, rabbitmq_router, users_router
+from app.api import auth_router, permissions_router, rabbitmq_router, users_router
 from app.core import settings, get_db
 from app.dao import TokenBlocklistDAO
 
@@ -38,6 +38,7 @@ app = FastAPI(
 app.include_router(auth_router, tags=["Authentication"])
 app.include_router(rabbitmq_router, prefix='/mq', tags=["RabbitMQ Auth Backend"])
 app.include_router(users_router, prefix="/api", tags=["Users"])
+app.include_router(permissions_router, prefix="/api", tags=["Permissions"])
 
 
 if __name__ == "__main__":
