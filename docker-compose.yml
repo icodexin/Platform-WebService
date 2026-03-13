@@ -13,6 +13,32 @@ services:
       - timescaledb-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  app:
+    build:
+      context: .
+    container_name: app
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: timescaledb
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/api/openapi.json')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
   rabbitmq:
     image: rabbitmq:4-management
     container_name: rabbitmq
@@ -24,8 +50,6 @@ services:
       - rabbitmq-data:/var/lib/rabbitmq
       - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
       - ./config/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
@@ -35,6 +59,21 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nginx
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      BACKEND_UPSTREAM: app:8000
+      FRONTEND_UPSTREAM: host.docker.internal:3000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
   mediamtx:
     image: bluenviron/mediamtx:1
     environment:

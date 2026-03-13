@@ -32,7 +32,7 @@
 
 说明：
 - 代码和迁移当前基于 PostgreSQL 生态实现，不是 MySQL。
-- `docker-compose.yml` 中已声明 TimescaleDB、RabbitMQ、MediaMTX。
+- `docker-compose.yml` 中已声明 TimescaleDB、FastAPI 应用容器、RabbitMQ、Nginx、MediaMTX。
 - `aio-pika`、`msgpack` 等依赖已经存在，但还没有完整接入到应用主流程。
 
 ## 目录结构
@@ -130,7 +130,7 @@
 说明：
 - 已实现 RabbitMQ HTTP Auth Backend 四个认证接口，并已接入 `app/main.py`
 - RabbitMQ 容器配置文件位于 `config/rabbitmq/rabbitmq.conf` 和 `config/rabbitmq/enabled_plugins`
-- 当前容器内通过 `host.docker.internal:8000` 访问 FastAPI 认证接口，本地开发时需先启动 Web 服务
+- 当前 compose 配置下，RabbitMQ 通过 `http://app:8000/mq/auth/*` 访问 FastAPI 认证接口
 
 ### 流媒体
 
@@ -173,14 +173,30 @@ SYS_ADMIN_INIT_PWD=your-password
 ### 3. 启动基础设施
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
 当前会启动：
 
 - TimescaleDB
+- FastAPI 应用容器
 - RabbitMQ
+- Nginx 反向代理
 - MediaMTX
+
+Nginx 默认代理规则：
+
+- `/` -> 宿主机 `3000` 端口上的 React/Vite 前端
+- `/api/*` -> FastAPI `app:8000`
+- `/auth/*` -> FastAPI `app:8000`
+- `/mq/*` -> FastAPI `app:8000`
+
+说明：
+
+- 当前配置适合前端仍运行在宿主机 `3000` 端口的场景。
+- `host.docker.internal` 用于让 Nginx 容器访问宿主机服务；`docker-compose.yml` 已包含兼容映射。
+- 如果后续前端也容器化，只需要把 `FRONTEND_UPSTREAM` 改成对应服务名，例如 `frontend:3000`。
+- 默认情况下，FastAPI 容器的 `8000` 端口只在 Docker 内部网络可见，不直接暴露给宿主机。
 
 RabbitMQ 已启用以下插件：
 
@@ -193,19 +209,40 @@ RabbitMQ 已启用以下插件：
 ### 4. 执行数据库迁移
 
 ```bash
-uv run alembic upgrade head
+docker compose run --rm app uv run alembic upgrade head
 ```
 
-### 5. 启动服务
+### 5. 访问服务
 
 ```bash
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+docker compose up -d
 ```
 
 文档地址：
 
-- Swagger UI: [http://127.0.0.1:8000/api/docs](http://127.0.0.1:8000/api/docs)
-- OpenAPI: [http://127.0.0.1:8000/api/openapi.json](http://127.0.0.1:8000/api/openapi.json)
+- 前端入口: [http://127.0.0.1/](http://127.0.0.1/)
+- Swagger UI: [http://127.0.0.1/api/docs](http://127.0.0.1/api/docs)
+- OpenAPI: [http://127.0.0.1/api/openapi.json](http://127.0.0.1/api/openapi.json)
+
+### 6. 开发模式
+
+如果你希望前端通过 `vite dev` 直接访问宿主机上的 `http://127.0.0.1:8000`，可以叠加开发覆盖配置：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+```
+
+此时：
+
+- `http://127.0.0.1:8000` 可从宿主机直接访问
+- `http://127.0.0.1:3000` 可通过 Vite `server.proxy` 转发到后端
+- `http://127.0.0.1/` 仍然通过 Nginx 统一访问前后端
+
+如果你只想本地直接运行后端而不走容器，仍然可以使用：
+
+```bash
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
 
 ## 开发约定
 
