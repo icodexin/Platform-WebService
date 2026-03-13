@@ -1,0 +1,31 @@
+services:
+  rabbitmq:
+    environment:
+      BACKEND_UPSTREAM: app:8000
+  nginx:
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      BACKEND_UPSTREAM: app:8000
+  app:
+    build:
+      context: .
+    container_name: app
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: timescaledb
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    expose:
+      - "8000"
+    healthcheck:
+      test: [ "CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/api/openapi.json')" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5

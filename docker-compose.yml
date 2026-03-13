@@ -11,49 +11,25 @@ services:
       TZ: Asia/Shanghai
     volumes:
       - timescaledb-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-  app:
-    build:
-      context: .
-    container_name: app
-    env_file:
-      - .env
-    environment:
-      POSTGRES_HOST: timescaledb
-      RABBITMQ_HOST: rabbitmq
-    depends_on:
-      timescaledb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    expose:
-      - "8000"
-    healthcheck:
-      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/api/openapi.json')"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
   rabbitmq:
     image: rabbitmq:4-management
     container_name: rabbitmq
-    ports:
-      - "5672:5672"    # AMQP 端口
-      - "15672:15672"  # Web管理界面端口
-      - "1883:1883"    # MQTT 端口
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
       - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
       - ./config/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
     environment:
+      BACKEND_UPSTREAM: host.docker.internal:8000
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
       RABBITMQ_CONFIG_FILE: /etc/rabbitmq/rabbitmq.conf
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 30s
@@ -62,12 +38,10 @@ services:
   nginx:
     image: nginx:1.27-alpine
     container_name: nginx
-    depends_on:
-      app:
-        condition: service_healthy
     environment:
-      BACKEND_UPSTREAM: app:8000
+      BACKEND_UPSTREAM: host.docker.internal:8000
       FRONTEND_UPSTREAM: host.docker.internal:3000
+      MQ_ADMIN_UPSTREAM: rabbitmq:15672
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -78,16 +52,6 @@ services:
     image: bluenviron/mediamtx:1
     environment:
       MTX_RTSPTRANSPORTS: tcp,udp
-    ports:
-      - "8554:8554"    # RTSP 端口
-      - "1935:1935"    # RTMP 端口
-      - "8888:8888"    # HLS 端口
-      - "8889:8889"    # WebRTC 端口
-      - "9997:9997"    # API 端口
-      - "8000:8000/udp" # RTP UDP 端口
-      - "8001:8001/udp" # RTCP UDP 端口
-      - "8890:8890/udp" # SRT UDP 端口
-      - "8189:8189/udp" # WebRTC UDP 端口
 
 volumes: # 持久化数据卷
   timescaledb-data:
