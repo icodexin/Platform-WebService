@@ -26,6 +26,51 @@ async def authenticate_user(unified_id: str, password: str, db: AsyncSession = D
     return user
 
 
+def normalize_bearer_token(token: str | None) -> str:
+    """兼容 ``Bearer <token>`` 和原始 token 两种输入格式。"""
+    candidate = (token or "").strip()
+    if not candidate:
+        return ""
+    if candidate.lower().startswith("bearer "):
+        return candidate[7:].strip()
+    return candidate
+
+
+def looks_like_jwt(token: str | None) -> bool:
+    """做轻量格式判断，避免把普通密码直接送进 JWT 解码逻辑。"""
+    candidate = normalize_bearer_token(token)
+    parts = candidate.split(".")
+    return len(parts) == 3 and all(parts)
+
+
+async def authenticate_user_by_access_token(
+    token: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    使用 access token 解析并返回当前用户。
+    仅在 token 看起来像 JWT 时才尝试解码。
+    """
+    normalized_token = normalize_bearer_token(token)
+    if not looks_like_jwt(normalized_token):
+        return None
+
+    payload = await verify_token(normalized_token, TokenTypeEnum.access, db=db)
+    if not payload:
+        return None
+
+    subject = payload.get("sub")
+    try:
+        user_id = int(subject)
+    except (TypeError, ValueError):
+        return None
+
+    user = await UserDAO(db).get_user_by_id(user_id)
+    if not user or not user.is_active:
+        return None
+    return user
+
+
 def ensure_user_is_active(user) -> None:
     if not user.is_active:
         raise HTTPException(

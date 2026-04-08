@@ -2,6 +2,13 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from app.common.enums import (
+    RabbitMQAuthCheckEnum,
+    RabbitMQPermissionLevelEnum,
+    RabbitMQResourceTypeEnum,
+    RabbitMQTagEnum,
+)
+
 
 class PermissionMutationBase(BaseModel):
     @field_validator("code", "name", mode="before", check_fields=False)
@@ -56,3 +63,57 @@ class PermissionListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class RabbitMQPermissionBindingMutationBase(BaseModel):
+    @field_validator("vhost_pattern", "resource_name_pattern", "routing_key_pattern", mode="before", check_fields=False)
+    @classmethod
+    def strip_pattern(cls, value: str | None):
+        if value is None:
+            return value
+        return value.strip()
+
+
+class RabbitMQPermissionBindingCreate(RabbitMQPermissionBindingMutationBase):
+    check_type: RabbitMQAuthCheckEnum
+    vhost_pattern: str = Field(default="*", min_length=1, max_length=255)
+    resource_type: RabbitMQResourceTypeEnum | None = None
+    resource_name_pattern: str | None = Field(default=None, min_length=1, max_length=255)
+    permission_level: RabbitMQPermissionLevelEnum | None = None
+    routing_key_pattern: str | None = Field(default=None, min_length=1, max_length=255)
+    rabbitmq_tag: RabbitMQTagEnum | None = None
+
+
+class RabbitMQPermissionBindingUpdate(RabbitMQPermissionBindingMutationBase):
+    check_type: RabbitMQAuthCheckEnum | None = None
+    vhost_pattern: str | None = Field(default=None, min_length=1, max_length=255)
+    resource_type: RabbitMQResourceTypeEnum | None = None
+    resource_name_pattern: str | None = Field(default=None, min_length=1, max_length=255)
+    permission_level: RabbitMQPermissionLevelEnum | None = None
+    routing_key_pattern: str | None = Field(default=None, min_length=1, max_length=255)
+    rabbitmq_tag: RabbitMQTagEnum | None = None
+
+    @model_validator(mode="after")
+    def validate_not_empty(self):
+        if not self.model_fields_set:
+            raise ValueError("至少需要提供一个更新字段")
+        return self
+
+
+class RabbitMQPermissionBindingResponse(BaseModel):
+    id: int
+    permission_id: int
+    check_type: RabbitMQAuthCheckEnum
+    vhost_pattern: str
+    resource_type: RabbitMQResourceTypeEnum | None
+    resource_name_pattern: str | None
+    permission_level: RabbitMQPermissionLevelEnum | None
+    routing_key_pattern: str | None
+    rabbitmq_tag: RabbitMQTagEnum | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class RabbitMQPermissionBindingListResponse(BaseModel):
+    items: list[RabbitMQPermissionBindingResponse]
+    total: int

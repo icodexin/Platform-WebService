@@ -9,7 +9,7 @@ from app.common.enums import (
 )
 from app.dao import RabbitMQPermissionBindingDAO, UserDAO
 from app.models.rabbitmq_permission_binding import RabbitMQPermissionBinding
-from app.services.auth import authenticate_user
+from app.services.auth import authenticate_user, authenticate_user_by_access_token
 
 ALLOW = "allow"
 DENY = "deny"
@@ -57,6 +57,21 @@ async def _get_active_user_bindings(username: str, db: AsyncSession):
         return None, []
     bindings = await RabbitMQPermissionBindingDAO(db).get_user_bindings(user.id)
     return user, bindings
+
+
+async def _authenticate_rabbitmq_user(username: str, password: str, db: AsyncSession):
+    """
+    RabbitMQ 连接认证支持两种模式:
+    1. ``username=统一身份ID`` + ``password=用户密码``
+    2. ``username=统一身份ID`` + ``password=<access_token>``
+
+    JWT 模式下仍强制要求 ``username`` 与 token 对应用户的 ``unified_id`` 一致，
+    防止拿着自己的 token 冒充别的 RabbitMQ 用户名建立连接。
+    """
+    token_user = await authenticate_user_by_access_token(password, db)
+    if token_user:
+        return token_user if token_user.unified_id == username else None
+    return await authenticate_user(username, password, db)
 
 
 def _collect_tags(bindings: list[RabbitMQPermissionBinding]) -> list[str]:
@@ -111,7 +126,7 @@ def _binding_matches_topic(
 async def authorize_user(username: str, password: str, db: AsyncSession) -> str:
     """校验用户身份并返回可选管理标签。"""
     # 1. 验证用户身份
-    user = await authenticate_user(username, password, db)
+    user = await _authenticate_rabbitmq_user(username, password, db)
     if not user or not user.is_active:
         return DENY
 
