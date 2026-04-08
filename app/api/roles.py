@@ -5,15 +5,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.permissions import ROLE_MANAGE
 from app.core import get_db
-from app.schemas.role import RoleCreate, RoleListResponse, RoleResponse, RoleUpdate
+from app.schemas.role import (
+    RoleCreate,
+    RoleListResponse,
+    RolePermissionBindingUpdate,
+    RoleResponse,
+    RoleUpdate,
+)
 from app.services.permission import require_permission
 from app.services.role import (
     create_role,
     delete_role,
     get_role_detail,
+    get_role_permission_bindings,
     list_roles,
     role_list_pagination,
     update_role,
+    update_role_permission_bindings,
 )
 
 router = APIRouter(
@@ -69,3 +77,22 @@ async def delete_role_endpoint(
     """删除角色"""
     await delete_role(role_id=role_id, db=db)
     return {"detail": "Role deleted successfully"}
+
+
+@router.get("/{role_id}/permissions", response_model=RoleResponse)
+async def get_role_permission_bindings_endpoint(
+    role_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """查询角色当前绑定的权限列表"""
+    return await get_role_permission_bindings(role_id=role_id, db=db)
+
+
+@router.put("/{role_id}/permissions", response_model=RoleResponse)
+async def update_role_permission_bindings_endpoint(
+    role_id: int,
+    payload: RolePermissionBindingUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    """整体覆盖角色的权限绑定"""
+    return await update_role_permission_bindings(role_id=role_id, payload=payload, db=db)

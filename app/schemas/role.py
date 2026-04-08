@@ -40,6 +40,10 @@ class RoleUpdate(RoleMutationBase):
         return self
 
 
+class RolePermissionBindingUpdate(BaseModel):
+    permission_ids: list[int] = Field(..., description="角色绑定的权限 ID 列表，传入后整体覆盖")
+
+
 class RoleResponse(BaseModel):
     id: int
     code: str

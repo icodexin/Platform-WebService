@@ -6,12 +6,14 @@ from app.models.role import Role
 from app.schemas.role import (
     RoleCreate,
     RoleListResponse,
+    RolePermissionBindingUpdate,
     RolePermissionSummary,
     RoleResponse,
     RoleUpdate,
 )
 
 BUILTIN_ROLE_CODES = frozenset({"admin", "teacher", "student"})
+ADMIN_ROLE_CODE = "admin"
 
 
 def serialize_role(role: Role) -> RoleResponse:
@@ -76,19 +78,20 @@ async def create_role(payload: RoleCreate, db: AsyncSession) -> RoleResponse:
 async def update_role(role_id: int, payload: RoleUpdate, db: AsyncSession) -> RoleResponse:
     dao = RoleDAO(db)
     role = await _get_role_or_404(role_id=role_id, db=db)
-    _ensure_role_mutable(role)
-
     updates = payload.model_dump(exclude_unset=True, exclude={"permission_ids"})
-    if "code" in updates and updates["code"] != role.code:
-        duplicated_role = await dao.get_role_by_code(updates["code"])
-        if duplicated_role and duplicated_role.id != role.id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="角色编码已存在",
-            )
+    if updates:
+        _ensure_role_basic_fields_mutable(role)
+        if "code" in updates and updates["code"] != role.code:
+            duplicated_role = await dao.get_role_by_code(updates["code"])
+            if duplicated_role and duplicated_role.id != role.id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="角色编码已存在",
+                )
 
     permissions = None
     if payload.permission_ids is not None:
+        _ensure_role_permission_bindings_mutable(role)
         permissions = await _resolve_permissions(permission_ids=payload.permission_ids, db=db)
 
     updated_role = await dao.update_role(role=role, permissions=permissions, **updates)
@@ -97,7 +100,7 @@ async def update_role(role_id: int, payload: RoleUpdate, db: AsyncSession) -> Ro
 
 async def delete_role(role_id: int, db: AsyncSession):
     role = await _get_role_or_404(role_id=role_id, db=db)
-    _ensure_role_mutable(role)
+    _ensure_role_deletable(role)
     if role.users:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -130,9 +133,42 @@ async def _resolve_permissions(permission_ids: list[int], db: AsyncSession):
     return permissions
 
 
-def _ensure_role_mutable(role: Role):
+async def get_role_permission_bindings(role_id: int, db: AsyncSession) -> RoleResponse:
+    role = await _get_role_or_404(role_id=role_id, db=db)
+    return serialize_role(role)
+
+
+async def update_role_permission_bindings(
+    role_id: int,
+    payload: RolePermissionBindingUpdate,
+    db: AsyncSession,
+) -> RoleResponse:
+    role = await _get_role_or_404(role_id=role_id, db=db)
+    _ensure_role_permission_bindings_mutable(role)
+    permissions = await _resolve_permissions(permission_ids=payload.permission_ids, db=db)
+    updated_role = await RoleDAO(db).update_role(role=role, permissions=permissions)
+    return serialize_role(updated_role)
+
+
+def _ensure_role_basic_fields_mutable(role: Role):
     if role.code in BUILTIN_ROLE_CODES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="系统内置角色不允许修改或删除",
+            detail="系统内置角色不允许修改基础信息",
+        )
+
+
+def _ensure_role_permission_bindings_mutable(role: Role):
+    if role.code == ADMIN_ROLE_CODE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="管理员内置角色不允许修改权限绑定",
+        )
+
+
+def _ensure_role_deletable(role: Role):
+    if role.code in BUILTIN_ROLE_CODES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="系统内置角色不允许删除",
         )
